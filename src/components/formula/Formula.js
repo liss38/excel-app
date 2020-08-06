@@ -1,4 +1,5 @@
 import {ExcelComponent} from '@core/ExcelComponent'
+import {$} from '@core/dom'
 
 export class Formula extends ExcelComponent {
 	// поле `className` статическое,
@@ -12,22 +13,37 @@ export class Formula extends ExcelComponent {
 	// Formula.className
 	static className = `excel__formula` // корневой класс для данного блока
 
-	constructor($root) {
+	constructor($root, options) {
 		super($root, {
 			// обязательный параметр, имя компонента
 			// для его идентификации в потоке/иеррахии
 			name: `Formula`,
 			// массив событий, которые нужно
 			// прослушивать на данном компоненте
-			listeners: [`input`, `click`],
+			listeners: [`input`, `keydown`, `input`],
+			...options,
 		})
 		this.$root = $root
+	}
+
+	init() {
+		super.init()
+
+		this.$formula = this.$root.find(`#formula`)
+
+		this.$on(`table:select`, ($cell) => {
+			this.$formula.text($cell.text())
+		})
+
+		this.$on(`table:input`, ($cell) => {
+			this.$formula.text($cell.text())
+		})
 	}
 
 	toHTML() {
 		return `
 			<div class="info">fx</div>
-			<div class="input" contenteditable spellcheck="true"></div>
+			<div id="formula" class="input" contenteditable spellcheck="true"></div>
 		`
 	}
 
@@ -41,10 +57,16 @@ export class Formula extends ExcelComponent {
 	// focus -> onFocus()
 	// ...
 	onInput(evt) {
-		console.log(`onInput  Formula :: $root  ::  `, this.$root);
-		console.log(`Formula: onInput -> evt :: `, evt.target.textContent.trim() )
+		this.$emit(`formula:input`, $(evt.target).text())
 	}
 
-	// потом удалить
-	onClick() {}
+	onKeydown(evt) {
+		// когда нажимаем `Enter` или `Tab` в формуле,
+		// фокус должен переходить на выбранную ячейку в таблице
+		if(evt.key === `Enter` || evt.key === `Tab`) {
+			evt.preventDefault()
+
+			this.$emit(`formula:done`)
+		}
+	}
 }

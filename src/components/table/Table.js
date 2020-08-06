@@ -1,20 +1,47 @@
 import {ExcelComponent} from '@core/ExcelComponent'
+import {$} from '@core/dom'
 import {createTable} from './table.template'
 import {resizeHandler} from './table.resize'
-import {shouldResize} from './table.functions'
+import {shouldResize, getSelectionIdList, nextSelector} from './table.functions'
+import {TableSelection} from './TableSelection'
 
 
 export class Table extends ExcelComponent {
 	static className = `excel__table`
 
-	constructor($root) {
+	constructor($root, options) {
 		super($root, {
-			listeners: [`mousedown`],
+			listeners: [`mousedown`, `click`, `keydown`, `input`],
+			...options,
 		})
 	}
 
 	toHTML() {
 		return createTable(25)
+	}
+
+	prepare() {
+		this.selection = new TableSelection()
+	}
+
+	init() {
+		super.init()
+
+		const cell = this.$root.find(`[data-id="0:0"]`)
+		this.selectCell(cell)
+
+		this.$on(`formula:done`, (data) => {
+			this.selection.current.focus()
+		})
+
+		this.$on(`formula:input`, (data) => {
+			this.selection.current.text(data)
+		})
+	}
+
+	selectCell(cell) {
+		this.selection.select(cell)
+		this.$emit(`table:select`, cell)
 	}
 
 	onMousedown(evt) {
@@ -23,6 +50,53 @@ export class Table extends ExcelComponent {
 		if(resizeType) {
 			resizeHandler(this.$root, evt)
 		}
+	}
+
+	onClick(evt) {
+		const id = evt.target.dataset.id
+
+		if(id) {
+			const cell = this.$root.find(`[data-id="${id}"]`)
+
+			if(evt.shiftKey) {
+				const current = this.selection.current.id(`parsed`)
+				const target = cell.id(`parsed`)
+
+				const $cellList = getSelectionIdList(current, target)
+					.map((id) => this.$root.find(`[data-id="${id}"]`))
+
+				this.selection.selectGroup($cellList)
+			} else {
+				this.selection.select(cell)
+				this.$emit(`table:input`, $(evt.target))
+			}
+		}
+	}
+
+	onKeydown(evt) {
+		const keys = [
+			`ArrowUp`,
+			`ArrowDown`,
+			`ArrowRight`,
+			`ArrowLeft`,
+			`Tab`,
+			`Enter`,
+			`Escape`,
+		]
+
+		const {key, shiftKey} = evt
+
+		if(keys.includes(key) && !shiftKey) {
+			evt.preventDefault()
+
+			const id = this.selection.current.id(true)
+			const $nextCell = this.$root.find(nextSelector(key, id))
+			this.selectCell($nextCell)
+		}
+	}
+
+	onInput(evt) {
+		this.$emit(`table:input`, $(evt.target))
 	}
 }
 
