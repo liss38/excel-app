@@ -36,6 +36,21 @@ class Dom {
 		return this.$el.outerHTML.trim()
 	}
 
+	// аналогично методу html(), только для текста
+	text(text) {
+		if(typeof text === `string`) {
+			this.$el.textContent = text
+			return this
+		}
+
+		// если это html-тэг `input`
+		if(this.$el.tagName.toLowerCase() === `input`) {
+			return this.$el.value.trim()
+		}
+
+		return this.$el.textContent.trim()
+	}
+
 	clear() {
 		// очистить содержимое
 		this.html(``)
@@ -62,6 +77,10 @@ class Dom {
 		this.$el.removeEventListener(eventType, callback)
 	}
 
+	find(selector) {
+		return $(this.$el.querySelector(selector))
+	}
+
 	closest(selector) {
 		return $(this.$el.closest(selector)) // $(...) because instanceof Dom
 	}
@@ -81,6 +100,39 @@ class Dom {
 	css(styles = {}) {
 		Object.keys(styles).forEach( (styleName) => this.$el.style[styleName] = styles[styleName])
 
+		return this
+	}
+
+	addClass(className) {
+		this.$el.classList.add(className)
+		return this
+	}
+
+	removeClass(className) {
+		this.$el.classList.remove(className)
+		return this
+	}
+
+	id(parse) {
+		if(parse) {
+			const parsed = this.id().split(`:`)
+
+			return {
+				row: +parsed[0],
+				col: +parsed[1],
+			}
+		}
+
+		return this.$el.dataset.id
+	}
+
+	focus() {
+		this.$el.focus()
+		return this
+	}
+
+	blur() {
+		this.$el.blur()
 		return this
 	}
 }

@@ -4,12 +4,19 @@ const CODES = {
 }
 
 // создаёт ячейку таблицы
-function toCell(_, index) {
-	// isSelected
-	// <div class="cell  selected" contenteditable>cell</div>
-	return `
-		<div class="cell" data-type="resizeble" data-col="${index}" contenteditable></div>
-	`
+function toCell(row) {
+	return function(_, col) {
+		return `
+			<div
+				class="cell"
+				data-type="resizeble"
+				data-col="${col}"
+				data-id="${row}:${col}"
+				data-type="cell"
+				contenteditable
+			>111</div>
+		`
+	}
 }
 
 // создаёт колонку таблицы
@@ -55,13 +62,13 @@ export function createTable(rowsCount = 15) {
 	rows.push(createRow(null, cols))
 
 	// остальные строки с cell'ами
-	for(let i = 0; i < rowsCount; i++) {
+	for(let rowIndex = 0; rowIndex < rowsCount; rowIndex++) {
 		const cells = new Array(colsCount)
 			.fill(``)
-			.map(toCell)
+			.map(toCell(rowIndex))
 			.join(``)
 
-		rows.push(createRow(i + 1, cells))
+		rows.push(createRow(rowIndex + 1, cells))
 	}
 
 	return rows.join(``)
